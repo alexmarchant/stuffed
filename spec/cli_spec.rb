@@ -4,9 +4,19 @@ require 'spec_helper'
 describe Stuffed::CLI do
   include StuffedSpecHelpers
 
+  before(:each) do
+    @tempfile = Tempfile.new('hosts')
+    @tempfile.close
+  end
+
+  after(:each) do
+    @tempfile.unlink
+  end
+
+
   it "displays usage info if no command is passed" do
 
-    stuffed("").should == <<-eos
+    stuffed("", @tempfile.path).should == <<-eos
 USAGE: stuffed <task>
 
 The stuffed tasks are:
@@ -18,20 +28,48 @@ The stuffed tasks are:
     eos
   end
 
-  describe "add" do
+  describe "#add" do
 
     it "gives an error if no command is passed" do
 
-      stuffed("add").should == "Which site do you want to add to the blocked list\n"
+      stuffed("add", @tempfile.path).should == "Which site do you want to add to the blocked list\n"
 
     end
   end
 
-  describe "remove" do
+  describe "#remove" do
 
     it "gives an error if no command is passed" do
 
-      stuffed("remove").should == "Which site do you want to remove from the blocked list\n"
+      stuffed("remove", @tempfile.path).should == "Which site do you want to remove from the blocked list\n"
+
+    end
+  end
+
+  describe "#list" do
+
+    it "lists all blocked sites" do
+
+      stuffed("add alexmarchant.com", @tempfile.path)
+      stuffed("list", @tempfile.path).should == "alexmarchant.com\nwww.alexmarchant.com\n"
+
+    end
+  end
+
+  describe "#on" do
+
+    it "gives feedback" do
+
+      stuffed("on", @tempfile.path).should == "Sites are now being stuffed.\n"
+
+    end
+  end
+
+  describe "#off" do
+
+    it "gives a status message" do
+
+      stuffed("off", @tempfile.path).should == "Blocking has been temporarily turned off.\n"
 
     end
   end

@@ -2,4 +2,4 @@
 
 require 'stuffed/cli'
 
-Stuffed::Cli.new.parse
+Stuffed::CLI.new.parse

@@ -6,9 +6,9 @@ require 'pry'
 
 module StuffedSpecHelpers
 
-  def stuffed(args)
+  def stuffed(args, hosts_path)
     out = StringIO.new
-    Stuffed::CLI.new(out).parse(args.split(/\s+/))
+    Stuffed::CLI.new(out, hosts_path).parse(args.split(/\s+/))
     out.rewind
     out.read
   rescue SystemExit
