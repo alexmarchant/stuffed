@@ -15,5 +15,10 @@ module StuffedSpecHelpers
     out.rewind
     out.read
   end
+end
 
+module Kernel
+  def system(cmd)
+    "call #{cmd}"
+  end
 end

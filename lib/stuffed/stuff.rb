@@ -43,7 +43,7 @@ module Stuffed
         inside_stuffed_section = false if line == "# End Stuffed Section\n"
 
         if inside_stuffed_section
-          site = line.gsub(/127.0.0.1\s*/,"")
+          site = line.gsub(/127.0.0.1\s*/,"").gsub(/# /,"")
           sites += site
         end
 
@@ -74,6 +74,8 @@ module Stuffed
       tempfile.close
       tempfile.unlink
       hosts.close
+
+      flush
     end
 
     def off
@@ -96,11 +98,18 @@ module Stuffed
       tempfile.close
       tempfile.unlink
       hosts.close
+
+      flush
     end
 
     def flush
-      #system( "dscacheutil -flushcache"  )
-      #system( "killall -HUP mDNSResponder" )
+      if os_is_mac
+        if os_is_lion_or_greater
+          system( "killall -HUP mDNSResponder" )
+        else
+          system( "dscacheutil -flushcache"  )
+        end
+      end
     end
 
     def already_blocked(site)
@@ -224,6 +233,16 @@ module Stuffed
       s.gsub(/# End Stuffed Section/,"")
       s.gsub(/[\n,\s]/,"")
       s == ""
+    end
+
+    def os_is_mac
+      RUBY_PLATFORM.match(/darwin/) ? true : false
+    end
+
+    def os_is_lion_or_greater
+      version = RUBY_PLATFORM.match(/darwin(.*)/)[1]
+      major_version = version.split(".")[0]
+      major_version.to_i >= 11
     end
   end
 end

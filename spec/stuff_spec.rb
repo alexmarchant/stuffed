@@ -203,5 +203,37 @@ describe Stuffed::Stuff do
 
     end
   end
+
+  describe "#flush" do
+
+    context "on mac" do
+
+      context "on Lion and greater" do
+
+        it "calls 'killall -HUP mDNSResponder'" do
+
+          tempfile = Tempfile.new('hosts')
+          tempfile.close
+
+          RUBY_PLATFORM = "x86_64-darwin12.2.1"
+          Stuffed::Stuff.new(tempfile.path).flush.should == "call killall -HUP mDNSResponder"
+
+        end
+      end
+
+      context "on Snow Leapard and lower" do
+
+        it "calls 'dscacheutil -flushcache'" do
+
+          tempfile = Tempfile.new('hosts')
+          tempfile.close
+
+          RUBY_PLATFORM = "x86_64-darwin10.0.0"
+          Stuffed::Stuff.new(tempfile.path).flush.should == "call dscacheutil -flushcache"
+
+        end
+      end
+    end
+  end
 end
 
