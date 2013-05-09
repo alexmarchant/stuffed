@@ -107,7 +107,7 @@ module Stuffed
         if os_is_lion_or_greater
           system( "killall -HUP mDNSResponder" )
         else
-          system( "dscacheutil -flushcache"  )
+          system( "dscacheutil -flushcache" )
         end
       end
     end
