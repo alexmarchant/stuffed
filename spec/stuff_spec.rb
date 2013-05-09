@@ -61,6 +61,7 @@ describe Stuffed::Stuff do
     end
   end
 
+
   describe "#remove" do
 
     it "removes the site from the hosts file" do

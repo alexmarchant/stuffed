@@ -44,6 +44,8 @@ The stuffed tasks are:
         begin
           Stuffed::Stuff.new(@hosts_path).add(@args[1])
           out.puts "Successfully added #{@args[1]}"
+        rescue Errno::EACCES
+          out.puts "Use 'sudo stuffed <task>'"
         rescue Exception => e
           out.puts e.message
         end
@@ -59,6 +61,8 @@ The stuffed tasks are:
         begin
           Stuffed::Stuff.new(@hosts_path).remove(@args[1])
           out.puts "Successfully removed #{@args[1]}."
+        rescue Errno::EACCES
+          out.puts "Use 'sudo stuffed <task>'"
         rescue Exception => e
           out.puts e.message
         end
@@ -75,11 +79,15 @@ The stuffed tasks are:
     def on
       Stuffed::Stuff.new(@hosts_path).on
       out.puts "Sites are now being stuffed."
+    rescue Errno::EACCES
+      out.puts "Use 'sudo stuffed <task>'"
     end
 
     def off
       Stuffed::Stuff.new(@hosts_path).off
       out.puts "Blocking has been temporarily turned off."
+    rescue Errno::EACCES
+      out.puts "Use 'sudo stuffed <task>'"
     end
   end
 end

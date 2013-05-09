@@ -47,6 +47,14 @@ The stuffed tasks are:
       stuffed("add alexmarchant.com", @tempfile.path).should == "alexmarchant.com is already being blocked.\n"
 
     end
+    
+    it "tells the user to use sudo if priveledges are insufficient to modify hosts" do
+
+      File.chmod 0007, @tempfile
+      
+      stuffed("add alexmarchant.com", @tempfile.path).should == "Use 'sudo stuffed <task>'\n"
+
+    end
   end
 
   describe "#remove" do
@@ -67,6 +75,14 @@ The stuffed tasks are:
     it "tells you if the site is not available to remove" do
 
       stuffed("remove alexmarchant.com", @tempfile.path).should == "alexmarchant.com is not currently being blocked.\n"
+
+    end
+
+    it "tells the user to use sudo if priveledges are insufficient to modify hosts" do
+
+      File.chmod 0007, @tempfile
+      
+      stuffed("remove alexmarchant.com", @tempfile.path).should == "Use 'sudo stuffed <task>'\n"
 
     end
   end
@@ -97,6 +113,14 @@ The stuffed tasks are:
       stuffed("on", @tempfile.path).should == "Sites are now being stuffed.\n"
 
     end
+
+    it "tells the user to use sudo if priveledges are insufficient to modify hosts" do
+
+      File.chmod 0007, @tempfile
+      
+      stuffed("remove alexmarchant.com", @tempfile.path).should == "Use 'sudo stuffed <task>'\n"
+
+    end
   end
 
   describe "#off" do
@@ -104,6 +128,14 @@ The stuffed tasks are:
     it "gives a status message" do
 
       stuffed("off", @tempfile.path).should == "Blocking has been temporarily turned off.\n"
+
+    end
+
+    it "tells the user to use sudo if priveledges are insufficient to modify hosts" do
+
+      File.chmod 0007, @tempfile
+      
+      stuffed("remove alexmarchant.com", @tempfile.path).should == "Use 'sudo stuffed <task>'\n"
 
     end
   end
