@@ -13,7 +13,6 @@ describe Stuffed::CLI do
     @tempfile.unlink
   end
 
-
   it "displays usage info if no command is passed" do
 
     stuffed("", @tempfile.path).should == <<-eos
@@ -35,6 +34,19 @@ The stuffed tasks are:
       stuffed("add", @tempfile.path).should == "Which site do you want to add to the blocked list\n"
 
     end
+
+    it "tells you the site got added" do
+
+      stuffed("add alexmarchant.com", @tempfile.path).should == "Successfully added alexmarchant.com\n"
+
+    end
+
+    it "tells you if the site already added" do
+
+      stuffed("add alexmarchant.com", @tempfile.path)
+      stuffed("add alexmarchant.com", @tempfile.path).should == "alexmarchant.com is already being blocked.\n"
+
+    end
   end
 
   describe "#remove" do
@@ -44,6 +56,19 @@ The stuffed tasks are:
       stuffed("remove", @tempfile.path).should == "Which site do you want to remove from the blocked list\n"
 
     end
+    
+    it "tells you the site got removed" do
+
+      stuffed("add alexmarchant.com", @tempfile.path)
+      stuffed("remove alexmarchant.com", @tempfile.path).should == "Successfully removed alexmarchant.com.\n"
+
+    end
+
+    it "tells you if the site is not available to remove" do
+
+      stuffed("remove alexmarchant.com", @tempfile.path).should == "alexmarchant.com is not currently being blocked.\n"
+
+    end
   end
 
   describe "#list" do
@@ -51,8 +76,17 @@ The stuffed tasks are:
     it "lists all blocked sites" do
 
       stuffed("add alexmarchant.com", @tempfile.path)
-      stuffed("list", @tempfile.path).should == "alexmarchant.com\nwww.alexmarchant.com\n"
+      stuffed("list", @tempfile.path).should == "Blocked sites:\nalexmarchant.com\nwww.alexmarchant.com\n"
 
+    end
+
+    context "when the list is empty" do
+
+      it "says the list is empty" do
+
+        stuffed("list", @tempfile.path).should == "You aren't currently blocking any sites.\n"
+
+      end
     end
   end
 

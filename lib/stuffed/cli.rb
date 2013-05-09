@@ -40,7 +40,14 @@ The stuffed tasks are:
 
     def add
       if @args[1]
-        Stuffed::Stuff.new(@hosts_path).add(@args[1])
+
+        begin
+          Stuffed::Stuff.new(@hosts_path).add(@args[1])
+          out.puts "Successfully added #{@args[1]}"
+        rescue Exception => e
+          out.puts e.message
+        end
+
       else
         out.puts "Which site do you want to add to the blocked list"
       end
@@ -48,7 +55,14 @@ The stuffed tasks are:
 
     def remove
       if @args[1]
-        Stuffed::Stuff.new(@hosts_path).remove(@args[1])
+
+        begin
+          Stuffed::Stuff.new(@hosts_path).remove(@args[1])
+          out.puts "Successfully removed #{@args[1]}."
+        rescue Exception => e
+          out.puts e.message
+        end
+
       else
         out.puts "Which site do you want to remove from the blocked list"
       end

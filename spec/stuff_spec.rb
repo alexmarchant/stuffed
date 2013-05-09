@@ -38,7 +38,7 @@ describe Stuffed::Stuff do
         tempfile.close
         Stuffed::Stuff.new(tempfile.path).add("alexmarchant.com")
 
-        lambda{Stuffed::Stuff.new(tempfile.path).add("alexmarchant.com")}.should raise_error(RuntimeError, 'Site already blocked')
+        lambda{Stuffed::Stuff.new(tempfile.path).add("alexmarchant.com")}.should raise_error(RuntimeError, 'alexmarchant.com is already being blocked.')
 
         tempfile.unlink
 
@@ -67,8 +67,8 @@ describe Stuffed::Stuff do
 
       tempfile = Tempfile.new('hosts')
       tempfile.puts "# Stuffed Section"
-      tempfile.puts "alexmarchant.com"
-      tempfile.puts "www.alexmarchant.com"
+      tempfile.puts "127.0.0.1       alexmarchant.com"
+      tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 
@@ -84,8 +84,8 @@ describe Stuffed::Stuff do
 
       tempfile = Tempfile.new('hosts')
       tempfile.puts "# Stuffed Section"
-      tempfile.puts "alexmarchant.com"
-      tempfile.puts "www.alexmarchant.com"
+      tempfile.puts "127.0.0.1       alexmarchant.com"
+      tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 
@@ -100,8 +100,8 @@ describe Stuffed::Stuff do
     it "only removes the site from the stuffed section" do
 
       tempfile = Tempfile.new('hosts')
-      tempfile.puts "alexmarchant.com"
-      tempfile.puts "www.alexmarchant.com"
+      tempfile.puts "127.0.0.1       alexmarchant.com"
+      tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.close
 
       Stuffed::Stuff.new(tempfile.path).remove("alexmarchant.com")
@@ -119,7 +119,7 @@ describe Stuffed::Stuff do
         tempfile = Tempfile.new('hosts')
         tempfile.close
 
-        lambda{Stuffed::Stuff.new(tempfile.path).remove("alexmarchant.com")}.should raise_error(RuntimeError, 'Site not blocked')
+        lambda{Stuffed::Stuff.new(tempfile.path).remove("alexmarchant.com")}.should raise_error(RuntimeError, 'alexmarchant.com is not currently being blocked.')
 
         tempfile.unlink
 
@@ -132,8 +132,8 @@ describe Stuffed::Stuff do
 
         tempfile = Tempfile.new('hosts')
         tempfile.puts "# Stuffed Section"
-        tempfile.puts "alexmarchant.com"
-        tempfile.puts "www.alexmarchant.com"
+        tempfile.puts "127.0.0.1       alexmarchant.com"
+        tempfile.puts "127.0.0.1       www.alexmarchant.com"
         tempfile.puts "# End Stuffed Section"
         tempfile.close
 
@@ -154,13 +154,13 @@ describe Stuffed::Stuff do
 
       tempfile = Tempfile.new('hosts')
       tempfile.puts "# Stuffed Section"
-      tempfile.puts "alexmarchant.com"
-      tempfile.puts "www.alexmarchant.com"
+      tempfile.puts "127.0.0.1       alexmarchant.com"
+      tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 
       list = Stuffed::Stuff.new(tempfile.path).list
-      list.should == "alexmarchant.com\nwww.alexmarchant.com\n"
+      list.should == "Blocked sites:\nalexmarchant.com\nwww.alexmarchant.com\n"
 
       tempfile.unlink
     end
@@ -172,13 +172,13 @@ describe Stuffed::Stuff do
 
       tempfile = Tempfile.new('hosts')
       tempfile.puts "# Stuffed Section"
-      tempfile.puts "# alexmarchant.com"
-      tempfile.puts "# www.alexmarchant.com"
+      tempfile.puts "# 127.0.0.1       alexmarchant.com"
+      tempfile.puts "# 127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 
       Stuffed::Stuff.new(tempfile.path).on
-      open(tempfile).read.should == "# Stuffed Section\nalexmarchant.com\nwww.alexmarchant.com\n# End Stuffed Section\n"
+      open(tempfile).read.should == "# Stuffed Section\n127.0.0.1       alexmarchant.com\n127.0.0.1       www.alexmarchant.com\n# End Stuffed Section\n"
 
       tempfile.unlink
 
@@ -191,13 +191,13 @@ describe Stuffed::Stuff do
 
       tempfile = Tempfile.new('hosts')
       tempfile.puts "# Stuffed Section"
-      tempfile.puts "alexmarchant.com"
-      tempfile.puts "www.alexmarchant.com"
+      tempfile.puts "127.0.0.1       alexmarchant.com"
+      tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 
       Stuffed::Stuff.new(tempfile.path).off
-      open(tempfile).read.should == "# Stuffed Section\n# alexmarchant.com\n# www.alexmarchant.com\n# End Stuffed Section\n"
+      open(tempfile).read.should == "# Stuffed Section\n# 127.0.0.1       alexmarchant.com\n# 127.0.0.1       www.alexmarchant.com\n# End Stuffed Section\n"
 
       tempfile.unlink
 

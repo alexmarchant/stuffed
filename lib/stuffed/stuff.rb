@@ -11,7 +11,7 @@ module Stuffed
 
     def add(site)
 
-      raise 'Site already blocked' if already_blocked site
+      raise "#{site} is already being blocked." if already_blocked site
 
       s1, s2 = site_variations(site)
 
@@ -24,7 +24,7 @@ module Stuffed
 
     def remove(site)
 
-      raise 'Site not blocked' if !already_blocked site
+      raise "#{site} is not currently being blocked." if !already_blocked site
 
       s1, s2 = site_variations(site)
 
@@ -36,15 +36,21 @@ module Stuffed
     end
 
     def list
-      sites = ""
+      sites = "Blocked sites:\n"
 
       inside_stuffed_section = false
       File.open(@hosts_path, "r").each do |line|
         inside_stuffed_section = false if line == "# End Stuffed Section\n"
-        sites += line if inside_stuffed_section
+
+        if inside_stuffed_section
+          site = line.gsub(/127.0.0.1\s*/,"")
+          sites += site
+        end
+
         inside_stuffed_section = true if line == "# Stuffed Section\n"
       end
 
+      sites = "You aren't currently blocking any sites." if sites.gsub(/[\n,\s]/,"") == "Blockedsites:"
       sites
     end
 
@@ -143,8 +149,8 @@ module Stuffed
       tempfile.each_line do |line|
         hosts.puts line
         if line == "# Stuffed Section\n"
-          hosts.puts s1
-          hosts.puts s2
+          hosts.puts "127.0.0.1       " + s1
+          hosts.puts "127.0.0.1       " + s2
         end
       end
 
@@ -216,7 +222,7 @@ module Stuffed
       end
       s.gsub(/# Stuffed Section/,"")
       s.gsub(/# End Stuffed Section/,"")
-      s.gsub(/(\\n,\s)/,"")
+      s.gsub(/[\n,\s]/,"")
       s == ""
     end
   end
