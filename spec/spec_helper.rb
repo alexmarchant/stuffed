@@ -5,7 +5,6 @@ require 'rspec'
 require 'pry'
 
 module StuffedSpecHelpers
-
   def stuffed(args, hosts_path)
     out = StringIO.new
     Stuffed::CLI.new(out, hosts_path).parse(args.split(/\s+/))
