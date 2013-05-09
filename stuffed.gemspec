@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'stuffed'
-  s.version     = '0.0.0'
+  s.version     = '0.1.0'
   s.date        = '2013-05-07'
   s.summary     = "Stuffed blocks websites."
   s.description = "A simple h"
