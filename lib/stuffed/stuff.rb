@@ -14,9 +14,9 @@ module Stuffed
 
       raise "#{site} is already being blocked." if already_blocked site
 
-      s1, s2 = site_variations(site)
+      s1, s2 = site_variations site
 
-      add_stuffed_section if !has_stuffed_section 
+      add_stuffed_section if !has_stuffed_section?
 
       insert_sites_into_stuffed_section s1, s2
 
@@ -37,22 +37,29 @@ module Stuffed
     end
 
     def list
-      sites = "Blocked sites:\n"
+      sites = []
 
       inside_stuffed_section = false
       File.open(@hosts_path, "r").each do |line|
         inside_stuffed_section = false if line == "# End Stuffed Section\n"
 
         if inside_stuffed_section
-          site = line.gsub(/127.0.0.1\s*/,"").gsub(/# /,"")
-          sites += site
+          if !line.strip.empty?
+            line.strip!
+            line.gsub! "127.0.0.1       ", ""
+            line.gsub! "# ", ""
+            sites.push line
+          end
         end
 
         inside_stuffed_section = true if line == "# Stuffed Section\n"
       end
 
-      sites = "You aren't currently blocking any sites." if sites.gsub(/[\n,\s]/,"") == "Blockedsites:"
-      sites
+      if sites.empty?
+        "You aren't currently blocking any sites."
+      else
+        "Blocked sites:\n" + sites.join("\n") + "\n"
+      end
     end
 
     def on
@@ -106,8 +113,8 @@ module Stuffed
     end
 
     def flush
-      if os_is_mac
-        if os_is_lion_or_greater
+      if os_is_mac?
+        if os_is_lion_or_greater?
           system( "killall -HUP mDNSResponder" )
         else
           system( "dscacheutil -flushcache" )
@@ -139,7 +146,7 @@ module Stuffed
       site.gsub("www.","")
     end
 
-    def has_stuffed_section
+    def has_stuffed_section?
       hosts_file_contains? "# Stuffed Section"
     end
 
@@ -153,6 +160,26 @@ module Stuffed
       file.puts "# Stuffed Section"
       file.puts "# End Stuffed Section"
       file.close
+    end
+
+    def remove_stuffed_section
+      hosts = File.open(@hosts_path, "r")
+      tempfile = Tempfile.new('hosts-copy')
+      tempfile.write hosts.read
+      tempfile.close
+      hosts.close
+
+      record = true
+      hosts.reopen(hosts, "w")
+      tempfile.reopen(tempfile, "r").each do |line|
+        record = false if line == "# Stuffed Section\n"
+        hosts.puts line if record
+        record = true if line == "# End Stuffed Section\n"
+      end
+
+      tempfile.close
+      tempfile.unlink
+      hosts.close
     end
 
     def insert_sites_into_stuffed_section(s1, s2)
@@ -233,26 +260,6 @@ module Stuffed
       return false
     end
 
-    def remove_stuffed_section
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
-
-      record = true
-      hosts.reopen(hosts, "w")
-      tempfile.reopen(tempfile, "r").each do |line|
-        record = false if line == "# Stuffed Section\n"
-        hosts.puts line if record
-        record = true if line == "# End Stuffed Section\n"
-      end
-
-      tempfile.close
-      tempfile.unlink
-      hosts.close
-    end
-
     def stuffed_section_empty?
       s = ""
       start = false
@@ -267,11 +274,11 @@ module Stuffed
       s == ""
     end
 
-    def os_is_mac
+    def os_is_mac?
       RUBY_PLATFORM.match(/darwin/) ? true : false
     end
 
-    def os_is_lion_or_greater
+    def os_is_lion_or_greater?
       version = RUBY_PLATFORM.match(/darwin(.*)/)[1]
       major_version = version.split(".")[0]
       major_version.to_i >= 11
