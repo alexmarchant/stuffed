@@ -112,8 +112,10 @@ module Stuffed
       end
     end
 
+    private
+
     def already_blocked(site)
-      open(@hosts_path).grep(Regexp.new site).length > 0
+      hosts_file_contains? site
     end
 
     def site_variations(site)
@@ -135,7 +137,11 @@ module Stuffed
     end
 
     def has_stuffed_section
-      open(@hosts_path).grep("# Stuffed Section").length > 0
+      hosts_file_contains? "# Stuffed Section"
+    end
+
+    def hosts_file_contains?(string)
+      open(@hosts_path).grep(Regexp.new string).length > 0
     end
 
     def add_stuffed_section
