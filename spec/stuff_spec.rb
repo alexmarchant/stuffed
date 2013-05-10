@@ -59,6 +59,21 @@ describe Stuffed::Stuff do
 
       end
     end
+
+    context "when stuffed is off" do
+
+      tempfile = Tempfile.new('hosts')
+      tempfile.puts "# Stuffed Section"
+      tempfile.puts "# 127.0.0.1       alexmarchant.com"
+      tempfile.puts "# 127.0.0.1       www.alexmarchant.com"
+      tempfile.puts "# End Stuffed Section"
+      tempfile.close
+
+      it "comments out sites before adding them" do
+        Stuffed::Stuff.new(tempfile.path).add("facebook.com")
+        tempfile.open.grep(/facebook.com/)[0].should == "# 127.0.0.1       facebook.com\n"
+      end
+    end
   end
 
 
@@ -194,6 +209,22 @@ describe Stuffed::Stuff do
       tempfile.puts "# Stuffed Section"
       tempfile.puts "127.0.0.1       alexmarchant.com"
       tempfile.puts "127.0.0.1       www.alexmarchant.com"
+      tempfile.puts "# End Stuffed Section"
+      tempfile.close
+
+      Stuffed::Stuff.new(tempfile.path).off
+      open(tempfile).read.should == "# Stuffed Section\n# 127.0.0.1       alexmarchant.com\n# 127.0.0.1       www.alexmarchant.com\n# End Stuffed Section\n"
+
+      tempfile.unlink
+
+    end
+
+    it "doesn't comment out lines a second time" do
+
+      tempfile = Tempfile.new('hosts')
+      tempfile.puts "# Stuffed Section"
+      tempfile.puts "# 127.0.0.1       alexmarchant.com"
+      tempfile.puts "# 127.0.0.1       www.alexmarchant.com"
       tempfile.puts "# End Stuffed Section"
       tempfile.close
 

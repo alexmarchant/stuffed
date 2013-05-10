@@ -7,6 +7,7 @@ module Stuffed
 
     def initialize(hosts_path = "/etc/hosts")
       @hosts_path = hosts_path
+      @on_state = is_stuffed_on?
     end
 
     def add(site)
@@ -79,27 +80,29 @@ module Stuffed
     end
 
     def off
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
+      if is_stuffed_on?
+        hosts = File.open(@hosts_path, "r")
+        tempfile = Tempfile.new('hosts-copy')
+        tempfile.write hosts.read
+        tempfile.close
+        hosts.close
 
-      inside_stuffed_section = false
-      hosts.reopen(hosts, "w")
-      tempfile.reopen(tempfile, "r")
-      tempfile.each_line do |line|
-        inside_stuffed_section = false if line == "# End Stuffed Section\n"
-        line = "# " + line if inside_stuffed_section
-        hosts.puts line
-        inside_stuffed_section = true if line == "# Stuffed Section\n"
+        inside_stuffed_section = false
+        hosts.reopen(hosts, "w")
+        tempfile.reopen(tempfile, "r")
+        tempfile.each_line do |line|
+          inside_stuffed_section = false if line == "# End Stuffed Section\n"
+          line = "# " + line if inside_stuffed_section
+          hosts.puts line
+          inside_stuffed_section = true if line == "# Stuffed Section\n"
+        end
+
+        tempfile.close
+        tempfile.unlink
+        hosts.close
+
+        flush
       end
-
-      tempfile.close
-      tempfile.unlink
-      hosts.close
-
-      flush
     end
 
     def flush
@@ -164,14 +167,37 @@ module Stuffed
       tempfile.each_line do |line|
         hosts.puts line
         if line == "# Stuffed Section\n"
-          hosts.puts "127.0.0.1       " + s1
-          hosts.puts "127.0.0.1       " + s2
+          if @on_state
+            hosts.puts "127.0.0.1       " + s1
+            hosts.puts "127.0.0.1       " + s2
+          else
+            hosts.puts "# 127.0.0.1       " + s1
+            hosts.puts "# 127.0.0.1       " + s2
+          end
         end
       end
 
       tempfile.close
       tempfile.unlink
       hosts.close
+    end
+
+    def is_stuffed_on?
+      inside_stuffed_section = false
+
+      File.open(@hosts_path, "r").each do |line|
+        inside_stuffed_section = false if line == "# End Stuffed Section\n"
+
+        if inside_stuffed_section
+          if line.include? "# "
+            return false
+          end
+        end
+
+        inside_stuffed_section = true if line == "# Stuffed Section\n"
+      end
+
+      return true
     end
 
     def remove_sites_from_stuffed_section(s1, s2)
