@@ -10,15 +10,15 @@ gem install stuffed
 
 ## Usage
 
-`add reddit.com` - adds reddit.com & www.reddit.com to the blocked list.
+`stuffed add reddit.com` - adds reddit.com & www.reddit.com to the blocked list.
 
-`remove reddit.com` - removes reddit.com & www.reddit.com from the blocked list.
+`stuffed remove reddit.com` - removes reddit.com & www.reddit.com from the blocked list.
 
-`list` - lists all sites being blocked.
+`stuffed list` - lists all sites being blocked.
 
-`off` - toggles blocking off.
+`stuffed off` - toggles blocking off.
 
-`on` - toggles blocking on.
+`stuffed on` - toggles blocking on.
 
 ## Details
 
