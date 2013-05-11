@@ -16,7 +16,7 @@ module Stuffed
 
       s1, s2 = site_variations site
 
-      add_block_list if !has_block_list?
+      add_block_section if !has_block_list?
 
       insert_sites_into_block_list s1, s2
 
@@ -31,7 +31,7 @@ module Stuffed
 
       remove_sites_from_block_list s1, s2
 
-      remove_stuffed_section if stuffed_section_empty?
+      remove_block_section if stuffed_section_empty?
 
       flush
     end
@@ -118,7 +118,7 @@ module Stuffed
       open(@hosts_path).grep(Regexp.new string).length > 0
     end
 
-    def add_block_list
+    def add_block_section
       file = File.open(@hosts_path, "a")
       file.puts ""
       file.puts "# Stuffed Section"
@@ -126,24 +126,16 @@ module Stuffed
       file.close
     end
 
-    def remove_stuffed_section
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
+    def remove_block_section
+      top = get_top_text
+      top.sub! "# Stuffed Section\n", ""
+      bottom = get_bottom_text
+      bottom.sub! "# End Stuffed Section\n", ""
 
-      record = true
-      hosts.reopen(hosts, "w")
-      tempfile.reopen(tempfile, "r").each do |line|
-        record = false if line == "# Stuffed Section\n"
-        hosts.puts line if record
-        record = true if line == "# End Stuffed Section\n"
+      File.open(@hosts_path, "w") do |file|
+        file.write top
+        file.write bottom
       end
-
-      tempfile.close
-      tempfile.unlink
-      hosts.close
     end
 
     def insert_sites_into_block_list(s1, s2)
@@ -220,17 +212,9 @@ module Stuffed
     end
 
     def stuffed_section_empty?
-      s = ""
-      start = false
-      File.open(@hosts_path, "r").each do |line|
-        start = false if line == "# End Stuffed Section\n"
-        s += line if start
-        start = true if line == "# Stuffed Section\n"
-      end
-      s.gsub(/# Stuffed Section/,"")
-      s.gsub(/# End Stuffed Section/,"")
-      s.strip!
-      s == ""
+      block_list = get_block_list
+      block_list.strip!
+      block_list.empty?
     end
 
     def os_is_mac?
