@@ -229,4 +229,3 @@ describe Stuffed::Stuff do
     end
   end
 end
-
