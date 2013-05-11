@@ -16,20 +16,20 @@ module Stuffed
 
       s1, s2 = site_variations site
 
-      add_stuffed_section if !has_stuffed_section?
+      add_block_list if !has_block_list?
 
-      insert_sites_into_stuffed_section s1, s2
+      insert_sites_into_block_list s1, s2
 
       flush
     end
 
     def remove(site)
 
-      raise "#{site} is not currently being blocked." if !already_blocked site
+      raise "#{site} is not currently being blocked." if !already_blocked(site) || !has_block_list?
 
       s1, s2 = site_variations(site)
 
-      remove_sites_from_stuffed_section s1, s2
+      remove_sites_from_block_list s1, s2
 
       remove_stuffed_section if stuffed_section_empty?
 
@@ -37,76 +37,40 @@ module Stuffed
     end
 
     def list
-      sites = []
-
-      inside_stuffed_section = false
-      File.open(@hosts_path, "r").each do |line|
-        inside_stuffed_section = false if line == "# End Stuffed Section\n"
-
-        if inside_stuffed_section
-          if !line.strip.empty?
-            line.strip!
-            line.gsub! "127.0.0.1       ", ""
-            line.gsub! "# ", ""
-            sites.push line
-          end
-        end
-
-        inside_stuffed_section = true if line == "# Stuffed Section\n"
-      end
-
-      if sites.empty?
+      if stuffed_section_empty?
         "You aren't currently blocking any sites."
       else
+        sites = get_block_list.split("\n")
+
+        address = @on_state ? "# 127.0.0.1       " : "127.0.0.1       "
+
+        sites.map! do |site|
+          site.sub address, ""
+        end
+
         "Blocked sites:\n" + sites.join("\n") + "\n"
       end
     end
 
     def on
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
+      if !stuffed_section_empty?
+        block_list = get_block_list
+        block_list.gsub! /# /, ""
+        rewrite_block_list block_list
 
-      inside_stuffed_section = false
-      hosts.reopen(hosts, "w")
-      tempfile.reopen(tempfile, "r")
-      tempfile.each_line do |line|
-        inside_stuffed_section = false if line == "# End Stuffed Section\n"
-        line = line.gsub("# ","") if inside_stuffed_section
-        hosts.puts line
-        inside_stuffed_section = true if line == "# Stuffed Section\n"
+        flush
       end
-
-      tempfile.close
-      tempfile.unlink
-      hosts.close
-
-      flush
     end
 
     def off
-      if is_stuffed_on?
-        hosts = File.open(@hosts_path, "r")
-        tempfile = Tempfile.new('hosts-copy')
-        tempfile.write hosts.read
-        tempfile.close
-        hosts.close
-
-        inside_stuffed_section = false
-        hosts.reopen(hosts, "w")
-        tempfile.reopen(tempfile, "r")
-        tempfile.each_line do |line|
-          inside_stuffed_section = false if line == "# End Stuffed Section\n"
-          line = "# " + line if inside_stuffed_section
-          hosts.puts line
-          inside_stuffed_section = true if line == "# Stuffed Section\n"
+      if @on_state || !stuffed_section_empty?
+        block_list = get_block_list
+        sites = block_list.split "\n"
+        sites.map! do |site|
+          site.include?("#") ? site : "# " + site
         end
 
-        tempfile.close
-        tempfile.unlink
-        hosts.close
+        rewrite_block_list(sites.join("\n") + "\n")
 
         flush
       end
@@ -143,10 +107,10 @@ module Stuffed
     end
 
     def rm_www(site)
-      site.gsub("www.","")
+      site.gsub "www.", ""
     end
 
-    def has_stuffed_section?
+    def has_block_list?
       hosts_file_contains? "# Stuffed Section"
     end
 
@@ -154,7 +118,7 @@ module Stuffed
       open(@hosts_path).grep(Regexp.new string).length > 0
     end
 
-    def add_stuffed_section
+    def add_block_list
       file = File.open(@hosts_path, "a")
       file.puts ""
       file.puts "# Stuffed Section"
@@ -182,75 +146,70 @@ module Stuffed
       hosts.close
     end
 
-    def insert_sites_into_stuffed_section(s1, s2)
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
-
-      tempfile.reopen(tempfile, "r")
-      hosts.reopen(hosts, "w")
-      tempfile.each_line do |line|
-        hosts.puts line
-        if line == "# Stuffed Section\n"
-          if @on_state
-            hosts.puts "127.0.0.1       " + s1
-            hosts.puts "127.0.0.1       " + s2
-          else
-            hosts.puts "# 127.0.0.1       " + s1
-            hosts.puts "# 127.0.0.1       " + s2
-          end
-        end
-      end
-
-      tempfile.close
-      tempfile.unlink
-      hosts.close
+    def insert_sites_into_block_list(s1, s2)
+      address = @on_state ? "# 127.0.0.1       " : "127.0.0.1       "
+      add_to_block_list(address + s1 + "\n")
+      add_to_block_list(address + s2 + "\n")
     end
 
     def is_stuffed_on?
-      inside_stuffed_section = false
-
-      File.open(@hosts_path, "r").each do |line|
-        inside_stuffed_section = false if line == "# End Stuffed Section\n"
-
-        if inside_stuffed_section
-          if line.include? "# "
-            return false
-          end
-        end
-
-        inside_stuffed_section = true if line == "# Stuffed Section\n"
+      if has_block_list?
+        get_block_list.include? "#"
       end
-
-      return true
     end
 
-    def remove_sites_from_stuffed_section(s1, s2)
-      hosts = File.open(@hosts_path, "r")
-      tempfile = Tempfile.new('hosts-copy')
-      tempfile.write hosts.read
-      tempfile.close
-      hosts.close
+    def remove_sites_from_block_list(s1, s2)
+      block_list = get_block_list
+      address = @on_state ? "# 127.0.0.1       " : "127.0.0.1       "
+      remove_from_block_list(address + s1 + "\n")
+      remove_from_block_list(address + s2 + "\n")
+    end
 
-      tempfile.reopen(tempfile, "r")
-      hosts.reopen(hosts, "w")
+    def add_to_block_list(string)
+      block_list = get_block_list
+      block_list += string
+      rewrite_block_list block_list
+    end
 
-      outside_stuffed_section = true
-      tempfile.each_line do |line|
-        outside_stuffed_section = true if line == "# End Stuffed Section\n"
-        if outside_stuffed_section
-          hosts.puts line
-        elsif !line_includes_sites?(line, s1, s2)
-          hosts.puts line
-        end
-        outside_stuffed_section = false if line == "# Stuffed Section\n"
+    def remove_from_block_list(string)
+      block_list = get_block_list
+      block_list.sub! string, ""
+      rewrite_block_list block_list
+    end
+
+    def get_top_text
+      text = File.read(@hosts_path)
+      if toptext = text.match(/.*# Stuffed Section\n/m)
+        toptext[0]
+      else
+        ""
       end
+    end
 
-      tempfile.close
-      tempfile.unlink
-      hosts.close
+    def get_bottom_text
+      text = File.read(@hosts_path)
+      if toptext = text.match(/# End Stuffed Section\n.*/m)
+        toptext[0]
+      else
+        ""
+      end
+    end
+
+    def get_block_list
+      text = File.read(@hosts_path)
+      text.gsub! /.*# Stuffed Section\n/m, ""
+      text.gsub! /# End Stuffed Section\n.*/m, ""
+      text
+    end
+
+    def rewrite_block_list(string)
+      top_text = get_top_text
+      bottom_text = get_bottom_text
+      File.open(@hosts_path, "w") do |file|
+        file.write top_text
+        file.write string
+        file.write bottom_text
+      end
     end
 
     def line_includes_sites?(line, *args)
@@ -270,7 +229,7 @@ module Stuffed
       end
       s.gsub(/# Stuffed Section/,"")
       s.gsub(/# End Stuffed Section/,"")
-      s.gsub(/[\n,\s]/,"")
+      s.strip!
       s == ""
     end
 

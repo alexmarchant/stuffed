@@ -71,7 +71,7 @@ describe Stuffed::Stuff do
 
       it "comments out sites before adding them" do
         Stuffed::Stuff.new(tempfile.path).add("facebook.com")
-        tempfile.open.grep(/facebook.com/)[0].should == "# 127.0.0.1       facebook.com\n"
+        tempfile.open.grep(/facebook\.com/)[0].should == "# 127.0.0.1       facebook.com\n"
       end
     end
   end
@@ -120,9 +120,7 @@ describe Stuffed::Stuff do
       tempfile.puts "127.0.0.1       www.alexmarchant.com"
       tempfile.close
 
-      Stuffed::Stuff.new(tempfile.path).remove("alexmarchant.com")
-
-      open(tempfile).grep(/alexmarchant.com/).length.should > 0
+      lambda{Stuffed::Stuff.new(tempfile.path).remove("alexmarchant.com")}.should raise_error(RuntimeError, 'alexmarchant.com is not currently being blocked.')
 
       tempfile.unlink
 
