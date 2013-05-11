@@ -42,6 +42,7 @@ The stuffed tasks are:
       if @args[1]
 
         begin
+          backup_hosts_file
           Stuffed::Stuff.new(@hosts_path).add(@args[1])
           out.puts "Successfully added #{@args[1]}"
         rescue Errno::EACCES
@@ -59,6 +60,7 @@ The stuffed tasks are:
       if @args[1]
 
         begin
+          backup_hosts_file
           Stuffed::Stuff.new(@hosts_path).remove(@args[1])
           out.puts "Successfully removed #{@args[1]}."
         rescue Errno::EACCES
@@ -77,6 +79,7 @@ The stuffed tasks are:
     end
 
     def on
+      backup_hosts_file
       Stuffed::Stuff.new(@hosts_path).on
       out.puts "Sites are now being stuffed."
     rescue Errno::EACCES
@@ -84,10 +87,19 @@ The stuffed tasks are:
     end
 
     def off
+      backup_hosts_file
       Stuffed::Stuff.new(@hosts_path).off
       out.puts "Blocking has been temporarily turned off."
     rescue Errno::EACCES
       out.puts "Use 'sudo stuffed <task>'"
+    end
+
+    def backup_hosts_file
+      backup_path = @hosts_path + ".backup"
+      if !File.exists?(backup_path)
+        hosts_data = File.read(@hosts_path)
+        File.open(backup_path, "w") {|file| file.write hosts_data}
+      end
     end
   end
 end

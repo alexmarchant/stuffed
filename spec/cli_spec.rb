@@ -139,4 +139,22 @@ The stuffed tasks are:
 
     end
   end
+
+  describe "#backup_hosts_file" do
+
+    it "backs up the hosts file if a backup doesn't exist" do
+
+
+      @tempfile.open
+      @tempfile.puts "Orignial hosts file"
+      @tempfile.puts "test data"
+      @tempfile.close
+      hosts_data = File.read(@tempfile)
+
+      backup_path = @tempfile.path + ".backup"
+      stuffed("add alexmarchant.com", @tempfile.path)
+      File.read(backup_path).should == hosts_data
+
+    end
+  end
 end
